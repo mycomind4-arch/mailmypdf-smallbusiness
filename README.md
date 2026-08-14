@@ -1,89 +1,67 @@
 # MailMyPDF Business
 
-A small-business correspondence operating system built around the MailMyPDF mailing and proof infrastructure.
+A small-business correspondence automation product built on the MailMyPDF mailing/proof architecture.
 
 ## Product thesis
 
 **Create → Schedule → Approve → Send → Track → Prove → Archive**
 
-MailMyPDF remains the physical mailing and proof engine. This product adds the business layer: contacts, templates, scheduled mailings, recurring correspondence, approvals, conditional sequences, and a permanent proof archive.
+MailMyPDF Business is designed for companies that repeatedly send important physical documents: payment reminders, notices, renewals, contract correspondence, compliance letters, customer communications, and other business mail.
 
-## Synthesized foundations
+## What is implemented
 
-The initial foundation was extracted/synthesized from the existing `mycomind4-arch/mailmypdf` architecture rather than forked wholesale. The parent product already uses a vendor-agnostic domain layer covering addresses, documents, recipients, mail jobs, tracking, audit events, proof-of-mailing, and organizations. Those concepts are preserved here and extended for business workflows.
+- MailMyPDF-family warm paper / navy / postal-red visual system
+- Business workspace and navigation
+- Upcoming correspondence queue
+- One-time scheduled mailing composer
+- Recurring-monthly scheduling preview
+- Calendar view
+- Searchable correspondence list
+- Approval queue UX
+- Automation sequence UX
+- Contacts, templates, and proof-archive foundations
+- Vendor-neutral domain contracts for Address, Document, Recipient, MailJob, TrackingEvent, ProofOfMailing and AuditEvent
+- Scheduling primitives with one-time and simple recurring RRULE support
+- Local prototype persistence for scheduled mailings
 
-The MailMyPDF repository currently identifies itself as a TypeScript application for mailing letters/PDFs through USPS and contains domain, service, provider, product, vertical, and integration layers. Its package uses React, TanStack, Supabase, Stripe, PDF tooling, and Lucide. See the source repository for the canonical implementation.
+## Source synthesis
 
-## Architecture direction
+The domain layer was synthesized directly from the canonical MailMyPDF source architecture in `mycomind4-arch/mailmypdf`, particularly its vendor-neutral mailing/proof contracts and warm postal design system. The SMB layer adds business contacts, templates, schedules, triggers, conditions, approvals, and automation around those primitives.
+
+This repository is intentionally **not** a blind fork of MailMyPDF. It is a focused product built from the source concepts and implementation patterns needed for the SMB product.
+
+## Production architecture target
 
 ```text
 MailMyPDF Business UI
         |
-        +-- Business / Contacts
-        +-- Templates
-        +-- Correspondence
-        +-- Scheduler
-        +-- Workflow / Rules
-        +-- Approvals
-        +-- Proof Archive
+        +-- Business / Contacts / Templates
+        +-- Scheduled Mailings
+        +-- Automation Rules
+        +-- Approval Gates
         |
         v
-MailMyPDF Mailing Engine
+MailJob Domain
         |
-        +-- document generation
-        +-- payment
-        +-- mailing provider
-        +-- tracking
-        +-- proof / custody chain
+        +-- Document generation/storage
+        +-- Mail provider adapter
+        +-- Tracking webhooks
+        +-- Proof-of-mailing service
+        |
+        v
+Permanent Correspondence Record
 ```
 
-### Workflow engine
+The scheduler is provider-neutral. A production deployment can use Trigger.dev, Cloudflare Queues, or another durable worker without changing the domain contracts.
 
-Use a durable TypeScript workflow/scheduling system such as Trigger.dev for scheduled and conditional execution rather than inventing a cron framework. Keep the application contracts provider-neutral.
+## Development
 
-### Integration layer
+```bash
+npm install
+npm run dev
+npm run build
+```
 
-n8n can later be offered as an integration path for QuickBooks, Google Sheets, CRMs, webhooks, and other business systems. It should not become the core product runtime.
+## Important
 
-### CRM reference
-
-Twenty is a useful architectural reference for business/contact/object/workflow concepts. Do not blindly fork it into this project. Review its license and isolate any third-party code before commercial incorporation.
-
-## Initial UI
-
-The first commit establishes a MailMyPDF-family visual system and an initial business command center with:
-
-- scheduled mailing queue
-- approval queue
-- mail calendar
-- next-best-action panel
-- activity timeline
-- delivery/scheduled metrics
-- warm paper / navy / postal-red visual language
-
-This is intentionally a foundation, not the finished product.
-
-## Next implementation phases
-
-1. Real business/contact persistence
-2. Correspondence records and status lifecycle
-3. Template builder with variables
-4. Scheduled mailing engine
-5. Recurring schedules and time-zone handling
-6. Conditional correspondence sequences
-7. Approval workflows
-8. MailMyPDF API integration
-9. Tracking webhooks
-10. Proof archive
-11. Bulk/personalized mailings
-12. QuickBooks/n8n/API integrations
-
-## Guardrails
-
-- Never expose provider-specific types in domain contracts.
-- Never claim a mailing was sent until the provider confirms submission.
-- Never claim delivery until tracking confirms it.
-- Keep immutable proof/audit records.
-- Store timestamps in UTC and render in the business timezone.
-- Require explicit approval for configurable high-impact mailing sequences.
-- Treat scheduled mailings as durable jobs with idempotency keys.
+The current repository is the **working product foundation/prototype**. The next production phase is to connect the scheduler to the existing MailMyPDF backend, persist schedules and run records in the production database, implement idempotent worker execution, and wire actual mailing/tracking/proof APIs.
