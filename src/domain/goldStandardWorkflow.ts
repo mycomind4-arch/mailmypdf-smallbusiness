@@ -10,21 +10,28 @@ export type SmallBusinessGoldStage =
   | 'proof'
   | 'archive'
 
+export type GoldGateResult = {
+  passed: boolean
+  evidenceIds: string[]
+  message?: string
+}
+
 export type GoldStageResult = {
   stage: SmallBusinessGoldStage
   status: 'passed' | 'blocked' | 'failed'
+  evidenceIds: string[]
   messages: string[]
 }
 
 export type GoldWorkflowDependencies = {
-  evaluateTrigger: () => Promise<boolean>
-  generateDocument: () => Promise<boolean>
-  validate: () => Promise<boolean>
-  requestApproval: () => Promise<boolean>
-  sendMail: () => Promise<boolean>
-  verifyTracking: () => Promise<boolean>
-  verifyProof: () => Promise<boolean>
-  archive: () => Promise<boolean>
+  evaluateTrigger: () => Promise<GoldGateResult>
+  generateDocument: () => Promise<GoldGateResult>
+  validate: () => Promise<GoldGateResult>
+  requestApproval: () => Promise<GoldGateResult>
+  sendMail: () => Promise<GoldGateResult>
+  verifyTracking: () => Promise<GoldGateResult>
+  verifyProof: () => Promise<GoldGateResult>
+  archive: () => Promise<GoldGateResult>
 }
 
 export type GoldWorkflowResult = {
@@ -46,20 +53,33 @@ export async function runSmallBusinessGoldWorkflow(
 
   const run = async (
     stage: SmallBusinessGoldStage,
-    action: () => Promise<boolean>,
+    action: () => Promise<GoldGateResult>,
   ) => {
     try {
-      const passed = await action()
+      const result = await action()
+      const evidenceIds = result.evidenceIds.filter((id) => id.trim().length > 0)
+      if (result.passed && evidenceIds.length === 0) {
+        stages.push({
+          stage,
+          status: 'blocked',
+          evidenceIds,
+          messages: [result.message ?? `${stage} passed without evidence; provenance is required for Gold execution`],
+        })
+        return false
+      }
+
       stages.push({
         stage,
-        status: passed ? 'passed' : 'blocked',
-        messages: passed ? [] : [`${stage} gate did not pass`],
+        status: result.passed ? 'passed' : 'blocked',
+        evidenceIds,
+        messages: result.passed ? [] : [result.message ?? `${stage} gate did not pass`],
       })
-      return passed
+      return result.passed
     } catch (error) {
       stages.push({
         stage,
         status: 'failed',
+        evidenceIds: [],
         messages: [error instanceof Error ? error.message : String(error)],
       })
       return false
