@@ -19,9 +19,10 @@ describe("approvalEngine", () => {
     expect(canExecuteMail("pending", false)).toBe(true);
   });
 
-  it("requires an accountable actor when approving", () => {
-    expect(() => approve(pending, "   ")).toThrow("approving actor is required");
-    const result = approve(pending, " user-42 ");
+  it("requires an accountable actor and the required role when approving", () => {
+    expect(() => approve(pending, "   ", [])).toThrow("approving actor is required");
+    expect(() => approve(pending, "user-42", [])).toThrow("lacks required role");
+    const result = approve(pending, " user-42 ", ["approver", "owner"]);
     expect(result.status).toBe("approved");
     expect(result.decidedBy).toBe("user-42");
   });
