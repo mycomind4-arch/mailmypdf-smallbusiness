@@ -8,13 +8,22 @@ export const scheduleRuleSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("monthly"), day: z.number().int().min(1).max(31), hour: z.number().int().min(0).max(23), minute: z.number().int().min(0).max(59) }),
 ]);
 
+const timezoneSchema = z.string().min(1).refine((timezone) => {
+  try {
+    new Intl.DateTimeFormat("en-US", { timeZone: timezone }).format();
+    return true;
+  } catch {
+    return false;
+  }
+}, "timezone must be a valid IANA time zone");
+
 export const scheduledMailSchema = z.object({
   mailJobId: z.string().min(1),
   businessId: z.string().min(1),
   recipientId: z.string().min(1),
   documentId: z.string().min(1),
   mailClass: z.enum(["standard", "certified", "registered"] satisfies MailClass[]),
-  timezone: z.string().min(1),
+  timezone: timezoneSchema,
   rule: scheduleRuleSchema,
   requiresApproval: z.boolean().default(false),
 });
