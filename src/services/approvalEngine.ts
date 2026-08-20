@@ -21,10 +21,13 @@ export function canExecuteMail(status: ApprovalStatus, requiresApproval: boolean
 
 export function approve(request: ApprovalRequest, actorId: string, now = new Date()): ApprovalRequest {
   if (request.status !== "pending") throw new Error(`Approval ${request.id} is not pending`);
-  return { ...request, status: "approved", decidedAt: now.toISOString(), decidedBy: actorId };
+  if (!actorId.trim()) throw new Error("An approving actor is required");
+  return { ...request, status: "approved", decidedAt: now.toISOString(), decidedBy: actorId.trim() };
 }
 
 export function reject(request: ApprovalRequest, actorId: string, reason: string, now = new Date()): ApprovalRequest {
   if (request.status !== "pending") throw new Error(`Approval ${request.id} is not pending`);
-  return { ...request, status: "rejected", decidedAt: now.toISOString(), decidedBy: actorId, reason };
+  if (!actorId.trim()) throw new Error("A rejecting actor is required");
+  if (!reason.trim()) throw new Error("A rejection reason is required");
+  return { ...request, status: "rejected", decidedAt: now.toISOString(), decidedBy: actorId.trim(), reason: reason.trim() };
 }
