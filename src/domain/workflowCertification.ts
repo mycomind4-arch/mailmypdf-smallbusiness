@@ -1,5 +1,17 @@
-import type { DomainCapability } from '@mailmypdf/platform'
 import type { SmallBusinessWorkflowDefinition } from './workflows'
+
+export type DomainCapability =
+  | 'classification'
+  | 'extraction'
+  | 'deadlines'
+  | 'evidence'
+  | 'strategy'
+  | 'draft'
+  | 'validation'
+  | 'approval'
+  | 'mailing'
+  | 'tracking'
+  | 'proofAudit'
 
 export type WorkflowCertification = {
   workflowId: string
