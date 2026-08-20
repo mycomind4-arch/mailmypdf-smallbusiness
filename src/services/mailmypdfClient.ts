@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 export type MailExecutionInput = {
   mailJobId: string;
   businessId: string;
@@ -13,6 +15,13 @@ export type MailExecutionResult = {
   trackingNumber?: string;
   proofId?: string;
 };
+
+const mailExecutionResultSchema = z.object({
+  mailJobId: z.string().min(1),
+  status: z.string().min(1),
+  trackingNumber: z.string().min(1).optional(),
+  proofId: z.string().min(1).optional(),
+});
 
 export class MailMyPDFClient {
   constructor(private readonly baseUrl: string, private readonly apiKey: string) {}
@@ -38,6 +47,15 @@ export class MailMyPDFClient {
       throw new Error(`MailMyPDF returned ${response.status}: ${body.slice(0, 500)}`);
     }
 
-    return response.json() as Promise<MailExecutionResult>;
+    const parsed = mailExecutionResultSchema.safeParse(await response.json().catch(() => null));
+    if (!parsed.success) {
+      throw new Error("MailMyPDF returned an invalid execution payload");
+    }
+
+    if (parsed.data.mailJobId !== input.mailJobId) {
+      throw new Error("MailMyPDF execution response belongs to a different mail job");
+    }
+
+    return parsed.data;
   }
 }
