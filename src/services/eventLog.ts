@@ -6,6 +6,8 @@ export type BusinessEventType =
   | "mailing.approved"
   | "mailing.rejected"
   | "mailing.executing"
+  | "mailing.accepted"
+  | "mailing.proof_pending"
   | "mailing.sent"
   | "mailing.delivered"
   | "mailing.returned"
