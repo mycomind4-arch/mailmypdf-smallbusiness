@@ -17,7 +17,7 @@ export async function handleMailMyPDFWebhook(input: {
     await input.publisher.publish({
       id: event.id,
       businessId: String(event.data?.businessId ?? "unknown"),
-      type: event.type === "proof.generated" ? "proof.generated" : event.type.replace("mailing.", "mailing.") as never,
+      type: event.type,
       entityId: event.mailJobId,
       occurredAt: event.occurredAt,
       metadata: { state, ...event.data },
