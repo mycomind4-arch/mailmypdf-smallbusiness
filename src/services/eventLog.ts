@@ -9,6 +9,7 @@ export type BusinessEventType =
   | "mailing.accepted"
   | "mailing.proof_pending"
   | "mailing.sent"
+  | "mailing.in_transit"
   | "mailing.delivered"
   | "mailing.returned"
   | "proof.generated";
