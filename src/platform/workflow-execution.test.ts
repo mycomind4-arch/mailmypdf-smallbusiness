@@ -1,21 +1,22 @@
-import assert from 'node:assert/strict'
-import test from 'node:test'
+import { describe, it, expect } from 'vitest'
 import { planWorkflowExecution } from './workflow-execution'
 
-test('ready plan reaches mailing and tracking', () => {
-  const plan = planWorkflowExecution({ workflowId: 'payment-reminder', recipient: 'customer@example.com', documentProvided: true, risk: 'LOW', requiresApproval: false })
-  assert.equal(plan.status, 'READY')
-  assert.deepEqual(plan.stages, ['PLAN', 'REVIEW', 'MAIL', 'TRACK'])
-})
+describe('Workflow Execution Planning', () => {
+  it('ready plan reaches mailing and tracking', () => {
+    const plan = planWorkflowExecution({ workflowId: 'payment-reminder', hasRecipient: true, hasDocument: true, hasEvidence: false, risk: 'LOW', requiresApproval: false })
+    expect(plan.status).toBe('READY')
+    expect(plan.stages).toEqual(['PLAN', 'REVIEW', 'MAIL', 'TRACK'])
+  })
 
-test('approval-required plan cannot reach mailing', () => {
-  const plan = planWorkflowExecution({ workflowId: 'payment-demand', recipient: 'customer@example.com', documentProvided: true, risk: 'HIGH', evidenceProvided: true, requiresApproval: true })
-  assert.equal(plan.status, 'APPROVAL_REQUIRED')
-  assert.ok(!plan.stages.includes('MAIL'))
-})
+  it('approval-required plan cannot reach mailing', () => {
+    const plan = planWorkflowExecution({ workflowId: 'payment-demand', hasRecipient: true, hasDocument: true, hasEvidence: true, risk: 'HIGH', requiresApproval: true })
+    expect(plan.status).toBe('APPROVAL_REQUIRED')
+    expect(plan.stages.includes('MAIL')).toBe(false)
+  })
 
-test('blocked plan cannot reach mailing', () => {
-  const plan = planWorkflowExecution({ workflowId: 'payment-demand', recipient: '', documentProvided: false, risk: 'HIGH', requiresApproval: true })
-  assert.equal(plan.status, 'BLOCKED')
-  assert.ok(!plan.stages.includes('MAIL'))
+  it('blocked plan cannot reach mailing', () => {
+    const plan = planWorkflowExecution({ workflowId: 'payment-demand', hasRecipient: false, hasDocument: false, hasEvidence: false, risk: 'HIGH', requiresApproval: true })
+    expect(plan.status).toBe('BLOCKED')
+    expect(plan.stages.includes('MAIL')).toBe(false)
+  })
 })

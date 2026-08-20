@@ -21,7 +21,7 @@ describe('small business workflow capability certification', () => {
     ])
 
     expect(result.executable).toBe(false)
-    expect(result.missingCapabilities).toEqual(['evidence', 'strategy'])
+    expect(result.missingCapabilities).toEqual(['evidence', 'strategy', 'draft'])
   })
 
   it('blocks a high-risk workflow with approval declared after mailing', () => {

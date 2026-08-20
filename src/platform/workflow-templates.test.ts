@@ -1,11 +1,12 @@
-import assert from 'node:assert/strict'
-import test from 'node:test'
+import { describe, it, expect } from 'vitest'
 import { smallBusinessWorkflowTemplates } from './workflow-templates'
 
-test('all flagship templates have evidence-oriented required facts and mailing class', () => {
-  assert.equal(smallBusinessWorkflowTemplates.length, 5)
-  for (const template of smallBusinessWorkflowTemplates) {
-    assert.ok(template.requiredFacts.length >= 2)
-    assert.ok(['FIRST_CLASS', 'CERTIFIED', 'REGISTERED'].includes(template.mailClass))
-  }
+describe('Workflow Templates', () => {
+  it('all flagship templates have evidence-oriented required facts and mailing class', () => {
+    expect(smallBusinessWorkflowTemplates.length).toBe(5)
+    for (const template of smallBusinessWorkflowTemplates) {
+      expect(template.requiredFacts.length >= 2).toBe(true)
+      expect(['FIRST_CLASS', 'CERTIFIED', 'REGISTERED'].includes(template.mailClass)).toBe(true)
+    }
+  })
 })

@@ -20,7 +20,7 @@ export interface WorkflowExecutionPlan {
 
 export function planWorkflowExecution(request: WorkflowExecutionRequest): WorkflowExecutionPlan {
   const policy = evaluateWorkflowPolicy(request)
-  const status: ExecutionStatus = policy.blocked ? 'BLOCKED' : policy.requiresApproval ? 'APPROVAL_REQUIRED' : 'READY'
+  const status: ExecutionStatus = !policy.allowed ? 'BLOCKED' : policy.requiresApproval ? 'APPROVAL_REQUIRED' : 'READY'
   const stages: ExecutionStage[] = ['PLAN']
   if (request.generatedText) stages.push('GENERATE')
   stages.push('REVIEW')

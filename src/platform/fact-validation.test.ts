@@ -1,11 +1,12 @@
-import assert from 'node:assert/strict'
-import test from 'node:test'
+import { describe, it, expect } from 'vitest'
 import { validateRequiredFacts } from './fact-validation'
 
-test('validates complete business facts', () => {
-  assert.deepEqual(validateRequiredFacts(['amount', 'invoiceNumber'], { amount: 100, invoiceNumber: 'INV-1' }), { valid: true, missing: [] })
-})
+describe('Fact Validation', () => {
+  it('validates complete business facts', () => {
+    expect(validateRequiredFacts(['amount', 'invoiceNumber'], { amount: 100, invoiceNumber: 'INV-1' })).toEqual({ valid: true, missing: [] })
+  })
 
-test('reports missing business facts deterministically', () => {
-  assert.deepEqual(validateRequiredFacts(['amount', 'invoiceNumber'], { amount: 100 }), { valid: false, missing: ['invoiceNumber'] })
+  it('reports missing business facts deterministically', () => {
+    expect(validateRequiredFacts(['amount', 'invoiceNumber'], { amount: 100 })).toEqual({ valid: false, missing: ['invoiceNumber'] })
+  })
 })
