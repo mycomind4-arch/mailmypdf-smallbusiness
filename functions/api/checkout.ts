@@ -36,20 +36,13 @@ async function stripeCreateSession(secret: string, params: Record<string, string
   return { id: payload.id, url: payload.url ?? null };
 }
 
-export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
+type PagesEvent<E> = { request: Request; env: E };
+
+export const onRequestPost = async ({ request, env }: PagesEvent<Env>): Promise<Response> => {
   try {
     const user = await requireAuthenticatedUser(request, env);
     if (!env.STRIPE_SECRET_KEY) return json({ error: "Stripe is not configured." }, 503);
-
-    const input = await request.json() as {
-      businessId?: string;
-      workflowId?: string;
-      title?: string;
-      draftContent?: string;
-      mailClass?: keyof typeof PRICES;
-      recipient?: Record<string, unknown>;
-      mailJobId?: string;
-    };
+    const input = await request.json() as { businessId?: string; workflowId?: string; title?: string; draftContent?: string; mailClass?: keyof typeof PRICES; recipient?: Record<string, unknown>; mailJobId?: string };
     const method = input.mailClass;
     if (!input.businessId || !input.workflowId || !input.draftContent || input.draftContent.trim().length < 20) return json({ error: "Business, workflow, and completed document are required." }, 400);
     if (!method || !(method in PRICES)) return json({ error: "A valid mail class is required." }, 400);
