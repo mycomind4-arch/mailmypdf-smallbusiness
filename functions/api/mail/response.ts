@@ -1,0 +1,40 @@
+import { requireAuthenticatedUser, json } from "../../_auth";
+
+type Env = { SUPABASE_URL?: string; SUPABASE_SERVICE_ROLE_KEY?: string; SUPABASE_ANON_KEY?: string; STRIPE_SECRET_KEY?: string };
+
+async function supabaseRest(env: Env, path: string, init: RequestInit = {}) {
+  if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) throw new Error("Supabase server configuration is incomplete.");
+  return fetch(`${env.SUPABASE_URL.replace(/\/$/, "")}/rest/v1/${path}`, { ...init, headers: { apikey: env.SUPABASE_SERVICE_ROLE_KEY, authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`, "content-type": "application/json", ...(init.headers || {}) } });
+}
+
+export const onRequestPost = async ({ request, env }: { request: Request; env: Env }): Promise<Response> => {
+  try {
+    const user = await requireAuthenticatedUser(request, env);
+    const { stripeSessionId } = await request.json() as { stripeSessionId?: string };
+    if (!stripeSessionId?.trim()) return json({ error: "Stripe Checkout Session ID is required." }, 400);
+    if (!env.STRIPE_SECRET_KEY) return json({ error: "Stripe is not configured." }, 503);
+
+    const stripeResponse = await fetch(`https://api.stripe.com/v1/checkout/sessions/${encodeURIComponent(stripeSessionId)}`, { headers: { authorization: `Bearer ${env.STRIPE_SECRET_KEY}` } });
+    const session = await stripeResponse.json() as { id?: string; payment_status?: string; payment_intent?: string; metadata?: Record<string, string>; error?: { message?: string } };
+    if (!stripeResponse.ok || !session.id) return json({ error: session.error?.message || "Invalid Stripe Checkout Session." }, 400);
+    if (session.payment_status !== "paid") return json({ error: "Payment has not been completed." }, 409);
+
+    const ownerId = session.metadata?.owner_user_id;
+    const intentId = session.metadata?.mailing_intent_id;
+    if (!ownerId || ownerId !== user.id || !intentId) return json({ error: "Payment session does not belong to this account." }, 403);
+
+    const intentResponse = await supabaseRest(env, `mailing_intents?id=eq.${encodeURIComponent(intentId)}&requested_by=eq.${encodeURIComponent(user.id)}&select=*`);
+    if (!intentResponse.ok) return json({ error: "Unable to load mailing intent." }, 502);
+    const intents = await intentResponse.json() as Array<Record<string, unknown>>;
+    const intent = intents[0];
+    if (!intent) return json({ error: "Mailing intent not found." }, 404);
+    if (intent.provider_order_id) return json({ success: true, status: intent.status, providerOrderId: intent.provider_order_id, trackingNumber: intent.tracking_number ?? null, idempotent: true });
+
+    const updateResponse = await supabaseRest(env, `mailing_intents?id=eq.${encodeURIComponent(intentId)}&requested_by=eq.${encodeURIComponent(user.id)}`, { method: "PATCH", body: JSON.stringify({ status: "paid", stripe_session_id: stripeSessionId, stripe_payment_intent_id: session.payment_intent || null, error_message: null }) });
+    if (!updateResponse.ok) return json({ error: "Unable to record verified payment." }, 502);
+    return json({ success: true, status: "paid", mailingIntentId: intentId, readyForTrigger: true, idempotent: false });
+  } catch (error) {
+    if (error instanceof Response) return error;
+    return json({ error: error instanceof Error ? error.message : "Unable to verify mailing payment." }, 502);
+  }
+};
