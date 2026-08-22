@@ -2,6 +2,9 @@
 -- Server routes use the service role, but database invariants must remain true
 -- even if another writer or future integration touches these tables.
 
+create unique index if not exists contacts_id_business_uidx on contacts(id, business_id);
+create unique index if not exists documents_id_business_uidx on documents(id, business_id);
+
 alter table mail_jobs
   add constraint mail_jobs_recipient_business_fk
   foreign key (recipient_id, business_id) references contacts(id, business_id);
