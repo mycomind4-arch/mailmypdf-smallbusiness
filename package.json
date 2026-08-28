@@ -11,14 +11,15 @@
     "trigger:deploy": "trigger deploy"
   },
   "dependencies": {
+    "@mailmypdf/pricing": "https://github.com/mycomind4-arch/mailmypdf-platform/releases/download/pricing-v0.2.0/mailmypdf-pricing-0.2.0.tgz",
     "@trigger.dev/sdk": "latest",
     "@vitejs/plugin-react": "latest",
     "lucide-react": "latest",
     "react": "latest",
     "react-dom": "latest",
-    "zod": "latest",
     "typescript": "latest",
-    "vite": "latest"
+    "vite": "latest",
+    "zod": "latest"
   },
   "devDependencies": {
     "@types/node": "latest",
