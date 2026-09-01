@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { propagateSSOSession } from "../lib/sso-propagate";
 
 interface AccountUser { id: string; email: string; fullName?: string; role?: string }
 interface AccountContext {
@@ -61,7 +62,8 @@ export function BusinessAccountProvider({ children }: { children: ReactNode }) {
         const payload = await authRequest("token?grant_type=password", { email, password });
         if (!payload.access_token || !payload.refresh_token || !payload.user) return "Authentication failed.";
         const next = normalize(payload as { access_token: string; refresh_token: string; expires_in?: number; user?: { id: string; email?: string; user_metadata?: Record<string, unknown> } });
-        setSession(next); localStorage.setItem(KEY, JSON.stringify(next)); return null;
+        setSession(next); localStorage.setItem(KEY, JSON.stringify(next));
+          propagateSSOSession(next.access_token, next.refresh_token, (next.expires_at ? Math.floor((next.expires_at - Date.now()) / 1000) : 3600)); return null;
       } catch (error) { return error instanceof Error ? error.message : "Authentication failed."; }
       finally { setLoading(false); }
     },

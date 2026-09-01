@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="robots" content="noindex,nofollow" />
+  <title>Signing you in — MailMyPDF Business</title>
+  <style>
+    body { font-family: 'DM Sans', system-ui, sans-serif; background: #f6f1e7; display: flex; min-height: 100vh; align-items: center; justify-content: center; margin: 0; }
+    .card { max-width: 28rem; text-align: center; padding: 2rem; }
+    h1 { font-family: 'Instrument Serif', serif; font-size: 2rem; font-weight: 400; margin: 0 0 1rem; }
+    p { color: #6b7280; font-size: 0.875rem; line-height: 1.5; }
+    .error { color: #dc2626; }
+    a { display: inline-block; margin-top: 1.5rem; padding: 0.5rem 1.25rem; border-radius: 9999px; background: #1a1d2e; color: #fff; text-decoration: none; font-size: 0.875rem; font-weight: 500; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1 id="title">Signing you in…</h1>
+    <p id="msg">Connecting your MailMyPDF account.</p>
+    <a id="back" href="/auth" style="display:none">Back to sign in</a>
+  </div>
+  <script>
+    (async function() {
+      var hash = window.location.hash.slice(1);
+      var params = new URLSearchParams(hash);
+      var accessToken = params.get('access_token');
+      var refreshToken = params.get('refresh_token');
+      var expiresIn = params.get('expires_in');
+      var returnTo = params.get('return_to');
+
+      if (!accessToken || !refreshToken) {
+        document.getElementById('title').textContent = 'Sign-in problem';
+        document.getElementById('msg').textContent = 'Missing authentication tokens. Please try signing in again.';
+        document.getElementById('msg').className = 'error';
+        document.getElementById('back').style.display = 'inline-block';
+        return;
+      }
+
+      // Fetch user info from Supabase using the access token
+      try {
+        // Try runtime config endpoint
+        var configRes = await fetch('/api/auth/config');
+        var config = configRes.ok ? await configRes.json() : null;
+        var supabaseUrl = (config && config.url) || null;
+        var supabaseKey = (config && config.anonKey) || null;
+
+        // Fall back to env vars
+        if (!supabaseUrl) {
+          // Try import.meta.env — not available in plain HTML, so we need the config endpoint
+          document.getElementById('title').textContent = 'Sign-in problem';
+          document.getElementById('msg').textContent = 'Account services are not configured.';
+          document.getElementById('msg').className = 'error';
+          document.getElementById('back').style.display = 'inline-block';
+          return;
+        }
+
+        // Fetch user data
+        var userRes = await fetch(supabaseUrl + '/auth/v1/user', {
+          headers: { 'apikey': supabaseKey, 'Authorization': 'Bearer ' + accessToken }
+        });
+        var user = userRes.ok ? await userRes.json() : null;
+
+        var stored = {
+          access_token: accessToken,
+          refresh_token: refreshToken,
+          expires_at: Date.now() + (parseInt(expiresIn) || 3600) * 1000,
+          user: {
+            id: user ? user.id : '',
+            email: user ? (user.email || '') : '',
+            fullName: user && user.user_metadata ? user.user_metadata.full_name : undefined,
+            role: user && user.user_metadata ? (user.user_metadata.role || 'customer') : 'customer'
+          }
+        };
+
+        localStorage.setItem('mailmypdf_business_auth', JSON.stringify(stored));
+
+        // Check if we're in an iframe
+        if (window.self !== window.top) {
+          window.parent.postMessage({ type: 'sso-callback', success: true, origin: window.location.origin }, '*');
+          return;
+        }
+
+        // Redirect
+        if (returnTo) {
+          window.location.href = returnTo;
+        } else {
+          window.location.href = '/';
+        }
+      } catch (err) {
+        document.getElementById('title').textContent = 'Sign-in problem';
+        document.getElementById('msg').textContent = err && err.message ? err.message : 'Failed to establish session.';
+        document.getElementById('msg').className = 'error';
+        document.getElementById('back').style.display = 'inline-block';
+      }
+    })();
+  </script>
+</body>
+</html>
