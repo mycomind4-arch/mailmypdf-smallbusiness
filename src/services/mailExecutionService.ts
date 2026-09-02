@@ -1,7 +1,7 @@
 import { idempotencyKey, type ScheduledMail } from "./scheduleEngine";
 import { canExecuteMail, type ApprovalStatus } from "./approvalEngine";
 import type { ExecutionStore } from "./executionStore";
-import { MailMyPDFClient } from "./mailmypdfClient";
+import type { MailExecutionClient } from "./mailmypdfClient";
 import type { EventLog } from "./eventLog";
 
 const ACCEPTED_STATUSES = new Set(["accepted", "queued", "submitted"]);
@@ -11,7 +11,7 @@ export async function executeScheduledMail(input: {
   occurrence: Date;
   approvalStatus: ApprovalStatus;
   executions: ExecutionStore;
-  mail: MailMyPDFClient;
+  mail: MailExecutionClient;
   events: EventLog;
 }): Promise<{ status: "skipped" | "executed"; executionId?: string }> {
   if (!canExecuteMail(input.approvalStatus, input.schedule.requiresApproval)) return { status: "skipped" };

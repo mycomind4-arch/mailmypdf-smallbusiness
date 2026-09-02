@@ -23,7 +23,11 @@ const mailExecutionResultSchema = z.object({
   proofId: z.string().min(1).optional(),
 });
 
-export class MailMyPDFClient {
+export interface MailExecutionClient {
+  executeMailJob(input: MailExecutionInput): Promise<MailExecutionResult>;
+}
+
+export class MailMyPDFClient implements MailExecutionClient {
   constructor(private readonly baseUrl: string, private readonly apiKey: string) {}
 
   async executeMailJob(input: MailExecutionInput): Promise<MailExecutionResult> {
